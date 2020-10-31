@@ -1,15 +1,6 @@
 local curl = require "lcurl.safe"
 local json = require "cjson.safe"
 
-function currDir()
-  os.execute("cd > cd.tmp")
-  local f = io.open("cd.tmp", r)
-  local cwd = f:read("*a")
-  f:close()
-  os.remove("cd.tmp")
-  return cwd
-end
-
 function request(url,header)
 	local r = ""
 	local c = curl.easy{
@@ -40,18 +31,18 @@ function cut(str,s_begin,s_end)
     return rs
 end
 
-local KEYA = pd.getConfig("蘑菇","VIPUSE")
+local KEYA = pd.getConfig("蘑菇","PCSUSE")
 if KEYA ~= "1" then
 pd.messagebox("感谢你使用MG系列插件\n如有任何使用问题请到t.me/fixpd反馈\n本系列插件仅供学习参考\n本提示仅显示一次","首次打开提示")
-pd.setConfig("蘑菇","VIPUSE","1")
+pd.setConfig("蘑菇","PCSUSE","1")
 end
 
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
 if version ~= "0.0.3" then
-pd.messagebox("脚本PCS接口检测到新版 点击确定更新","更新检测")
-pd.addUri(pcsdownnew,{["out"]="PCSUSE.luamg",["piece-length"]="1M",["allow-piece-length-change"]="true",["dir"]=currDir().."\PanData\script"})
+pd.messagebox("脚本PCS接口检测到新版 点击确定更新"..pcsdownnew,"更新检测")
+os.execute("start http://cdn01.mo23.me/dl/script/PCSUSE")
 end
 
 script_info = {
