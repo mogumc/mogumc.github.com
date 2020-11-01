@@ -37,30 +37,21 @@ pd.messagebox("感谢你使用MG系列插件\n如有任何使用问题请到t.me
 pd.setConfig("蘑菇","PCSUSE","1")
 end
 
-function currDir()
-  os.execute("cd > cd.tmp")
-  local f = io.open("cd.tmp", r)
-  local cwd = f:read("*a")
-  f:close()
-  os.remove("cd.tmp")
-  return cwd
-end
-
 function getnew()
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
-if version ~= "0.0.4" then
+if version ~= "0.0.5" then
 pd.messagebox("脚本PCS接口检测到新版\n点击确定更新"..pcsdownnew,"更新检测")
-pd.addUri(pcsdownnew,{['out'] = "PCSUSE.luamg",['dir'] = currDir().."\\PanData\\script"})
+os.execute("start http://cdn01.mo23.me/dl/script/PCSUSE")
 end
 end
 getnew()
 
 script_info = {
 	["title"] = "PCS接口",
-	["version"] = "0.0.4",
-	["description"] = "version 0.0.4",
+	["version"] = "0.0.5",
+	["description"] = "version 0.0.5",
 }
 
 function onInitTask(task, user, file)
