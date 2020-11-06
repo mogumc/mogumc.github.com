@@ -37,21 +37,27 @@ pd.messagebox("感谢你使用MG系列插件\n如有任何使用问题请到t.me
 pd.setConfig("蘑菇","PCSUSE","1")
 end
 
-function getnew()
+function currDir()
+  os.execute("cd > cd.tmp")
+  local f = io.open("cd.tmp", r)
+  local cwd = f:read("*a")
+  f:close()
+  os.remove("cd.tmp")
+  return cwd
+end
+
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
-if version ~= "0.0.5" then
+if version ~= "0.0.6" then
 pd.messagebox("脚本PCS接口检测到新版\n点击确定更新"..pcsdownnew,"更新检测")
-os.execute("start http://cdn01.mo23.me/dl/script/PCSUSE")
+pd.addUri(pcsdownnew,{['out'] = 'PCSUSE.luamg'})
 end
-end
-getnew()
 
 script_info = {
 	["title"] = "PCS接口",
-	["version"] = "0.0.5",
-	["description"] = "version 0.0.5",
+	["version"] = "0.0.6",
+	["description"] = "version 0.0.6",
 }
 
 function onInitTask(task, user, file)
@@ -61,18 +67,12 @@ if task:getType() == 1 then
 	return true
 	end
 end
-if task:getType() == TASK_TYPE_BAIDU then
+
+if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU then
     if user == nil then
         task:setError(-1, "请登录账号")
-		return true
-	end
-end
-if task:getType() == TASK_TYPE_SHARE_BAIDU then
-    if user == nil then
-        task:setError(-1, "请登录账号")
-		return true
-	end
-end	
+		return false
+	end	
 	local appid = pd.getConfig("Download","appid")
 	if appid == "" then
 	appid = 250528
@@ -119,8 +119,9 @@ end
 	task:setOptions("min-split-size", "216K")
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
-	task:setIcon("icon/acceleration2.png", "正在下载中")
-return true 
+	task:setIcon("icon/acceleration2.png", "正在下载中")	
+	return true 
+end	
 end
 
 function onSearch(key, page)
