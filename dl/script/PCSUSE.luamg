@@ -49,15 +49,15 @@ end
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
-if version ~= "0.0.6" then
+if version ~= "0.0.7" then
 pd.messagebox("脚本PCS接口检测到新版\n点击确定更新"..pcsdownnew,"更新检测")
 pd.addUri(pcsdownnew,{['out'] = 'PCSUSE.luamg'})
 end
 
 script_info = {
 	["title"] = "PCS接口",
-	["version"] = "0.0.6",
-	["description"] = "version 0.0.6",
+	["version"] = "0.0.7",
+	["description"] = "version 0.0.7",
 }
 
 function onInitTask(task, user, file)
@@ -113,15 +113,15 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	end
 	task:setUris(list)
     task:setOptions("user-agent", "netdisk;P2SP;2.2.60.26")
-    task:setOptions("header", "Cookie: "..user:getCookie())
+    task:setOptions("header", "Cookie: "..user:getCookie())	
+	return true 
+end	
 	task:setOptions("header", "Range:bytes=0-0")
 	task:setOptions("piece-length", "1M")
 	task:setOptions("min-split-size", "216K")
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
-	task:setIcon("icon/acceleration2.png", "正在下载中")	
-	return true 
-end	
+	task:setIcon("icon/acceleration2.png", "正在下载中")
 end
 
 function onSearch(key, page)
