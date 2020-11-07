@@ -37,27 +37,18 @@ pd.messagebox("感谢你使用MG系列插件\n如有任何使用问题请到t.me
 pd.setConfig("蘑菇","PCSUSE","1")
 end
 
-function currDir()
-  os.execute("cd > cd.tmp")
-  local f = io.open("cd.tmp", r)
-  local cwd = f:read("*a")
-  f:close()
-  os.remove("cd.tmp")
-  return cwd
-end
-
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
-if version ~= "0.0.7" then
+if version ~= "0.0.8" then
 pd.messagebox("脚本PCS接口检测到新版\n点击确定更新"..pcsdownnew,"更新检测")
 pd.addUri(pcsdownnew,{['out'] = 'PCSUSE.luamg'})
 end
 
 script_info = {
-	["title"] = "PCS接口",
-	["version"] = "0.0.7",
-	["description"] = "version 0.0.7",
+	["title"] = "PCS Downloader",
+	["version"] = "0.0.8",
+	["description"] = "version 0.0.8",
 }
 
 function onInitTask(task, user, file)
@@ -69,49 +60,85 @@ if task:getType() == 1 then
 end
 
 if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU then
+    local sharetype = pd.getConfig("Download","sharetype")
+	if sharetype == nil then
+	sharetype = 1
+	end
+	if sharetype ~= 2 then
     if user == nil then
         task:setError(-1, "请登录账号")
 		return false
 	end	
+	end
 	local appid = pd.getConfig("Download","appid")
 	if appid == "" then
 	appid = 250528
 	end
-	
 	local header = {}
-	table.insert(header, "Cookie: "..user:getCookie())
 	table.insert(header, "User-Agent: netdisk;P2SP;2.2.60.26")
 	local url = ""
 	if task:getType() == TASK_TYPE_BAIDU then
 	url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&origin=dlna&svip=1&vip=2&ver=4.0&clienttype=8&channel=mg&type=nolimit&path="..pd.urlEncode(file.path).."&app_id="..appid
-    else 
+    table.insert(header, "Cookie: "..user:getCookie())
+	end
+	if task:getType() == TASK_TYPE_SHARE_BAIDU then 
+	if sharetype == "1" then
 	local usud = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
-    url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
+    url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
+	table.insert(header, "Cookie: "..user:getCookie())
+	end
+	if sharetype == "2" then
+	local dlinklink = file.dlink
+	url = "http://127.0.0.1:8989/api/yjx?dlink="..dlinklink
+    if user ~= nil then
+        bdss = user:getCookie()
+		else
+		bdss = ""
+	end	
+	if bdss ~= "" then
+		table.insert(header, "Cookie: "..bdss.."SignText")
 	end
 	
+	end
+	end
 	local data = request(url,header)
     local j = json.decode(data)
 	if j == nil then
-	task:setError(-1, "未知错误")
-        return false
+	task:setError(-1, "请求失败")
+        return true
     end
-	    local downloadURL = ""
+	local downloadURL = ""
+	local url1 = ""
+	if task:getType() == TASK_TYPE_BAIDU then
     for i, w in ipairs(j.urls) do
 	    downloadURL = w.url
 		local d_start = string.find(downloadURL, "//") + 2
         local d_end = string.find(downloadURL, "%.") - 1
 		downloadURL = string.sub(downloadURL, d_start, d_end)
     end
+	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
+	end
+	if task:getType() == TASK_TYPE_SHARE_BAIDU then
+	if sharetype == "1" then
+    for i, w in ipairs(j.urls) do
+	    downloadURL = w.url
+		local d_start = string.find(downloadURL, "//") + 2
+        local d_end = string.find(downloadURL, "%.") - 1
+		downloadURL = string.sub(downloadURL, d_start, d_end)
+    end
+	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
+	end
+	if sharetype == "2" then
+	if j.error == "0" then 
+	url1 = j.link
+	else
+	task:setError(-1,"云解析错误,"..j.error)
+	return true
+	end
+	end
+	end
 	
-	local list = {}
-	local url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
-	table.insert(list, url1)
-	if user:isSVIP() then
-    for i, w in ipairs(j.urls) do	
-    table.insert(list, w.url)
-	end
-	end
-	task:setUris(list)
+	task:setUris(url1)
     task:setOptions("user-agent", "netdisk;P2SP;2.2.60.26")
     task:setOptions("header", "Cookie: "..user:getCookie())	
 	return true 
@@ -125,7 +152,84 @@ end
 end
 
 function onSearch(key, page)
+if key ~= "set" then
+if key ~= "appid" then
+if key ~= "help" then
 local appid = pd.input("请输入神秘代码 默认为250528")
 pd.setConfig("Download","appid",appid)
 return ACT_MESSAGE, "设置成功!当前APPID为"..appid
+end
+end
+end
+if key == "set" then
+return setConfig() 
+end
+if key == "appid" then
+return setappid()
+end
+if key == "help" then
+return help()
+end
+end
+
+function onItemClick(item)
+	if item.isConfig then
+		if item.isSel == "1" then
+			return ACT_NULL
+		else
+			pd.setConfig("Download", item.key, item.val)
+			return ACT_MESSAGE, "设置成功! (请手动刷新页面)"
+		end
+	end
+end
+
+function setConfig()
+	local config = {}
+	table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
+	local sharetype = pd.getConfig("Download","sharetype")
+	table.insert(config, {["title"] = "分享下载设置", ["enabled"] = "false"})
+	table.insert(config, createConfigItem("PCS接口", "sharetype", "1", sharetype == "1"))
+	table.insert(config, createConfigItem("云解析接口", "sharetype", "2",  sharetype == "2"))
+	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
+	return config
+end
+
+function setappid()
+	local config = {}
+	table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
+	local appid = pd.getConfig("Download","appid")
+	table.insert(config, {["title"] = "APPID", ["enabled"] = "false"})
+	table.insert(config, createConfigItem("百度官方", "appid", "250528", appid == "250528"))
+	table.insert(config, createConfigItem("百度TV", "appid", "778750",  appid == "778750"))
+	table.insert(config, createConfigItem("受限账户", "appid", "778750&to=d0", appid == "778750&to=d0"))
+	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
+	return config
+end
+
+function help()
+local config = {}
+table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
+table.insert(config, {["title"] = "输入appid即可选择预设appid", ["enabled"] = "true"})
+table.insert(config, {["title"] = "输入set即可进行设置", ["enabled"] = "true"})
+table.insert(config, {["title"] = "输入help即可呼出帮助文档", ["enabled"] = "true"})
+table.insert(config, {["title"] = "输入其他内容即可自定义appid", ["enabled"] = "true"})
+table.insert(config, {["title"] = "帮助文档 ver 1.0", ["enabled"] = "false"})
+return config
+end
+
+function createConfigItem(title, key, val, isSel)
+	local item = {}
+	item.title = title
+	item.key = key
+	item.val = val
+	item.icon_size = "14,14"
+	item.isConfig = "1"
+	if isSel then
+		item.image = "option/selected.png"
+		item.isSel = "1"
+	else
+		item.image = "option/normal.png"
+		item.isSel = "0"
+	end
+	return item
 end
