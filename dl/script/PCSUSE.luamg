@@ -37,18 +37,21 @@ pd.messagebox("感谢你使用MG系列插件\n如有任何使用问题请到t.me
 pd.setConfig("蘑菇","PCSUSE","1")
 end
 
+local chk = pd.getConfig("Download","chknew")
+if chk == "1" then
 local pcsnew = request("http://cdn01.mo23.me/pcsnew/")
 local version = cut(pcsnew,"AANEW:","BB")
 local pcsdownnew = cut(pcsnew,"BBDOWNLOAD:","CC")
-if version ~= "0.0.8" then
+if version ~= "0.0.9" then
 pd.messagebox("脚本PCS接口检测到新版\n点击确定更新"..pcsdownnew,"更新检测")
 pd.addUri(pcsdownnew,{['out'] = 'PCSUSE.luamg'})
+end
 end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.0.8",
-	["description"] = "version 0.0.8",
+	["version"] = "0.0.9",
+	["description"] = "version 0.0.9",
 }
 
 function onInitTask(task, user, file)
@@ -82,8 +85,8 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
     table.insert(header, "Cookie: "..user:getCookie())
 	end
 	if task:getType() == TASK_TYPE_SHARE_BAIDU then 
-	if sharetype == "1" then
 	local usud = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
+	if sharetype == "1" then
     url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
 	table.insert(header, "Cookie: "..user:getCookie())
 	end
@@ -99,6 +102,12 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 		table.insert(header, "Cookie: "..bdss.."SignText")
 	end
 	
+	end
+	if sharetype == "3" then
+	url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
+	local o = json.decode(request("http://api.admir.xyz/ad/cdn3.php"))
+	local bdu = o.BDUSS
+	table.insert(header, "Cookie: BDUSS="..bdu)
 	end
 	end
 	local data = request(url,header)
@@ -119,7 +128,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
 	end
 	if task:getType() == TASK_TYPE_SHARE_BAIDU then
-	if sharetype == "1" then
+	if sharetype == "1" or sharetype == "3" then
     for i, w in ipairs(j.urls) do
 	    downloadURL = w.url
 		local d_start = string.find(downloadURL, "//") + 2
@@ -190,6 +199,11 @@ function setConfig()
 	table.insert(config, {["title"] = "分享下载设置", ["enabled"] = "false"})
 	table.insert(config, createConfigItem("PCS接口", "sharetype", "1", sharetype == "1"))
 	table.insert(config, createConfigItem("云解析接口", "sharetype", "2",  sharetype == "2"))
+	table.insert(config, createConfigItem("云账号接口", "sharetype", "3",  sharetype == "3"))
+	local chknew = pd.getConfig("Download","chknew")
+	table.insert(config, {["title"] = "检测更新", ["enabled"] = "false"})
+	table.insert(config, createConfigItem("开启", "chknew", "1", chknew == "1"))
+	table.insert(config, createConfigItem("关闭", "chknew", "2", chknew ~= "1"))
 	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
