@@ -186,7 +186,6 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	if string.find(uip6, "qdall") == nil then
 	sign=0
 	url1 = uip6
-	pd.messagebox("cs")
 	task:setUris(url1)
 	task:setOptions("user-agent", "netdisk;P2SP;2.2.60.26")
 	task:setOptions("header", "Range:bytes=0-0")
