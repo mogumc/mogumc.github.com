@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.1.2",
-	["description"] = "version 0.1.2",
+	["version"] = "0.1.3",
+	["description"] = "version 0.1.3",
 }
 
 function onInitTask(task, user, file)
@@ -44,8 +44,8 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	if sharetype == "1" or task:getType() == TASK_TYPE_BAIDU then
     if user == nil then
         task:setError(-1, "请登录账号")
-		return false
-	end	
+		return true
+	end
 	end
 	local appid = pd.getConfig("Download","appid")
 	if appid == "" then
@@ -67,7 +67,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
     end
 	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
 	end
-	if task:getType() == TASK_TYPE_SHARE_BAIDU then 
+	if task:getType() == TASK_TYPE_SHARE_BAIDU then
 	local usud = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
 	if sharetype == "1" then
     url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
@@ -89,7 +89,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	task:setError(-1, "请求失败")
         return true
     end
-	if j.error == "0" then 
+	if j.error == "0" then
 	url1 = j.link
 	else
 	task:setError(-1,"云解析错误,"..j.error)
@@ -136,7 +136,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
 	task:setIcon("icon/svip.png", "高速下载中")
-    return true	
+    return true
 	end
 	end
 	end
@@ -149,8 +149,8 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
 	task:setIcon("icon/acceleration2.png", "正在下载中")
-	return true 
-end	
+	return true
+end
 	task:setOptions("header", "Range:bytes=0-0")
 	task:setOptions("piece-length", "1M")
 	task:setOptions("min-split-size", "216K")
@@ -170,7 +170,7 @@ end
 end
 end
 if key == "set" then
-return setConfig() 
+return setConfig()
 end
 if key == "appid" then
 return setappid()
@@ -212,7 +212,7 @@ function setappid()
 	table.insert(config, createConfigItem("百度官方", "appid", "250528", appid == "250528"))
 	table.insert(config, createConfigItem("百度TV", "appid", "778750",  appid == "778750"))
 	table.insert(config, createConfigItem("受限账户", "appid", "778750&to=d0", appid == "778750&to=d0"))
-	table.insert(config, createConfigItem("受限账户(会员推荐)", "appid", "250528&to=d0", appid == "778750&to=d0"))
+	table.insert(config, createConfigItem("受限账户(会员推荐)", "appid", "250528&to=d0", appid == "250528&to=d0"))
 	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
