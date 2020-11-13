@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.1.4",
-	["description"] = "version 0.1.4",
+	["version"] = "0.1.5",
+	["description"] = "version 0.1.5",
 }
 
 function onInitTask(task, user, file)
@@ -70,7 +70,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	if task:getType() == TASK_TYPE_SHARE_BAIDU then
 	local usud = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
 	if sharetype == "1" then
-    url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
+    url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
 	table.insert(header, "Cookie: "..user:getCookie())
 	data = request(url,header)
     j = json.decode(data)
@@ -106,10 +106,6 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	return true
 	end
 	local uii2 = uii1.BDUSS
-	if uii2 == "0" then
-	task:setError(-1,"key err")
-	return true
-	end
 	local uiis = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
 	local uii3 = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..uiis.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id=250528&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
 	local uii4 = { "User-Agent: netdisk;P2SP;2.2.60.26" }
@@ -117,6 +113,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	local uii5 = json.decode(request(uii3,uii4))
 	local uii6 = uii5.urls[1].url
 	if string.find(uii6, "qdall") == nil then
+	sign1=0
 	url1 = uii6
 	task:setUris(url1)
 	task:setOptions("user-agent", "netdisk;P2SP;2.2.60.26")
@@ -126,7 +123,6 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
 	task:setIcon("icon/svip.png", "高速下载中")
-	sign1=0
     return true
 	end
 	end
@@ -141,10 +137,6 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	return true
 	end
 	local uip2 = uip1.BDUSS
-	if uip2 == "0" then
-	task:setError(-1,"key err")
-	return true
-	end
 	local uips = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
 	local uip3 = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..uips.."&devuid=0&rand=0&time="..os.time().."&iv=2&ssl=1&tsl=80&csl=80&app_id=250528&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
 	local uip4 = { "User-Agent: netdisk;P2SP;2.2.60.26" }
@@ -152,6 +144,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	local uip5 = json.decode(request(uip3,uip4))
 	local uip6 = uip5.urls[1].url
 	if string.find(uip6, "qdall") == nil then
+	sign=0
 	url1 = uip6
 	task:setUris(url1)
 	task:setOptions("user-agent", "netdisk;P2SP;2.2.60.26")
@@ -160,8 +153,8 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	task:setOptions("min-split-size", "216K")
     task:setOptions("allow-piece-length-change", "true")
 	task:setOptions("enable-http-pipelining", "false")
+	task:setOptions("split", "16")
 	task:setIcon("icon/svip.png", "高速下载中")
-	sign=0
     return true
 	end
 	end
@@ -189,9 +182,11 @@ function onSearch(key, page)
 if key ~= "set" then
 if key ~= "appid" then
 if key ~= "help" then
+if key ~= "setkey" then
 local appid = pd.input("请输入神秘代码 默认为250528")
 pd.setConfig("Download","appid",appid)
 return ACT_MESSAGE, "设置成功!当前APPID为"..appid
+end
 end
 end
 end
@@ -203,6 +198,11 @@ return setappid()
 end
 if key == "help" then
 return help()
+end
+if key == "setkey" then
+local keyss = pd.input("请输入key(没有key请到TG私聊机器人获取)")
+pd.setConfig("ad","key",keyss)
+return ACT_MESSAGE, "设置成功!当前key为"..keyss
 end
 end
 
@@ -249,8 +249,9 @@ table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds 
 table.insert(config, {["title"] = "输入appid即可选择预设appid", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入set即可进行设置", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入help即可呼出帮助文档", ["enabled"] = "false"})
+table.insert(config, {["title"] = "输入setkey即可设置云账号key", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入其他内容即可自定义appid", ["enabled"] = "false"})
-table.insert(config, {["title"] = "帮助文档 ver 1.0", ["enabled"] = "false"})
+table.insert(config, {["title"] = "帮助文档 ver 1.0 修订 2020-11-13", ["enabled"] = "false"})
 return config
 end
 
@@ -270,6 +271,11 @@ function createConfigItem(title, key, val, isSel)
 	end
 	return item
 end
+
+
+
+
+
 
 
 
