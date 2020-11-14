@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.1.5",
-	["description"] = "version 0.1.5",
+	["version"] = "0.1.6",
+	["description"] = "version 0.1.6",
 }
 
 function onInitTask(task, user, file)
@@ -57,6 +57,18 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	local data = ""
 	local j = ""
 	if task:getType() == TASK_TYPE_BAIDU then
+	if appid == "778750&type=svip&to=d0" then
+	local urls = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=download&path="..pd.urlEncode(file.path).."&app_id="..appid
+    local uslk = string.gsub(urls.."&vip=2&type=nolimit&sh=1","250528","778750")
+	task:setUris(uslk)
+    task:setOptions("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36 netdisk P2SP")
+    task:setOptions("header", "Cookie: "..user:getCookie())
+	task:setOptions("piece-length", "1M")
+	task:setOptions("min-split-size", "256K")
+    task:setOptions("allow-piece-length-change", "true")
+	task:setIcon("icon/acceleration1.png", "下载中")
+    return true
+	end
 	url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&origin=dlna&svip=1&vip=2&ver=4.0&clienttype=8&channel=mg&type=nolimit&path="..pd.urlEncode(file.path).."&app_id="..appid
     table.insert(header, "Cookie: "..user:getCookie())
 	data = request(url,header)
@@ -239,6 +251,7 @@ function setappid()
 	table.insert(config, createConfigItem("百度TV", "appid", "778750",  appid == "778750"))
 	table.insert(config, createConfigItem("受限账户", "appid", "778750&to=d0", appid == "778750&to=d0"))
 	table.insert(config, createConfigItem("受限账户(会员推荐)", "appid", "250528&to=d0", appid == "250528&to=d0"))
+	table.insert(config, createConfigItem("受限账户(如果下载403请选择这个)", "appid", "778750&type=svip&to=d0", appid == "778750&type=svip&to=d0"))
 	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
