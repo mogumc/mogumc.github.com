@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.1.7",
-	["description"] = "version 0.1.7",
+	["version"] = "0.1.8",
+	["description"] = "version 0.1.8",
 }
 
 function onInitTask(task, user, file)
@@ -57,7 +57,7 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	local data = ""
 	local j = ""
 	if task:getType() == TASK_TYPE_BAIDU then
-	if appid == "250528&mgtype=svip&to=d0" then
+	if appid == "778750&mgtype=svip&to=d0" then
 	local urls = "https://c3.pcs.baidu.com/rest/2.0/pcs/file?method=download&origin=dlna&svip=1&vip=2&rand=0&devuid=0&clienttype=8&type=nolimit&path="..pd.urlEncode(file.path).."&app_id="..appid
 	task:setUris(urls)
     task:setOptions("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36 netdisk P2SP")
@@ -250,7 +250,7 @@ function setappid()
 	table.insert(config, createConfigItem("百度TV", "appid", "778750",  appid == "778750"))
 	table.insert(config, createConfigItem("受限账户", "appid", "778750&to=d0", appid == "778750&to=d0"))
 	table.insert(config, createConfigItem("受限账户(会员推荐)", "appid", "250528&to=d0", appid == "250528&to=d0"))
-	table.insert(config, createConfigItem("受限账户(如果下载403请选择这个)", "appid", "250528&mgtype=svip&to=d0", appid == "250528&mgtype=svip&to=d0"))
+	table.insert(config, createConfigItem("受限账户(如果下载403请选择这个)", "appid", "778750&mgtype=svip&to=d0", appid == "778750&mgtype=svip&to=d0"))
 	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
