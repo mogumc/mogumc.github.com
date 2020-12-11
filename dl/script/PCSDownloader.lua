@@ -264,13 +264,13 @@ if key == "提交百度账号" then
 local po = "https://api.kinh.cc/KinhDown/Cookie/Add.php"
 local pos = {}
 local bduss = pd.input('请输入BDUSS')
-table.insert(header, "Cookie: BDUSS="..bduss)
+table.insert(pos, "Cookie: BDUSS="..bduss)
 local t = json.decode(request(po,pos))
 local ss = t.data
 if ss == "此账号不是SVIP" then
 pd.messagebox('暂时只允许SVIP账号','失败')
 end
-pd.messagebox(ss,'成功')
+return ACT_MESSAGE,ss
 end
 if key == "bduss" then
 local kkkks = pd.input("请输入BDUSS")
