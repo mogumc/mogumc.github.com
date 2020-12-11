@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.2.1",
-	["description"] = "version 0.2.1",
+	["version"] = "0.2.2",
+	["description"] = "version 0.2.2",
 }
 
 function onInitTask(task, user, file)
@@ -105,16 +105,20 @@ if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU 
 	if j.error == "0" then
 	url1 = j.link
 	else
+	local as = j.data 
+	pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n提交账号请在搜索中输入：提交百度账号 下载专用提交软件\n为了大家正常下载 请勿更改内置固定线程!\n错误:'..as,'下载通知')
 	task:setError(-1,"云解析错误,"..j.error)
 	return true
 	end
-	local as = j.data 
-	pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n提交账号请在搜索中输入：提交百度账号 下载专用提交软件\n为了大家正常下载 请勿更改内置固定线程!\n'..as,'下载通知')
+	local dates = os.date("%Y%m%d",os.time())
+	if dates ~= pd.getConfig("Download","dates") then
+    pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n提交账号请在搜索中输入：提交百度账号 下载专用提交软件\n为了大家正常下载 请勿更改内置固定线程!\n本通知一天仅弹出一次','下载通知')
+    pd.setConfig("Download","dates",dates)
+	end
 	ua = j.ua
 	split = "16"
 	end
 	if sharetype == "zdy" then
-		local url = "http://127.0.0.1:8989/api/yzh"
     local BDUSS = pd.getConfig("Download","BDUSS")
 	if BDUSS == "" then
 	BDUSS = pd.input("请输入BDUSS")
