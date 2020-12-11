@@ -23,8 +23,8 @@ end
 
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.2.3",
-	["description"] = "version 0.2.3",
+	["version"] = "0.2.4",
+	["description"] = "version 0.2.4",
 }
 
 function onInitTask(task, user, file)
@@ -36,7 +36,7 @@ if task:getType() == 1 then
 end
 
 if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU then
-    local split = pd.getConfig("General","maxConnections")
+    local split = pd.getConfig("Download","maxConnections")
     local ua = "netdisk;P2SP;2.2.60.26"
     local sharetype = pd.getConfig("Download","sharetype")
 	local url1 = ""
@@ -264,13 +264,20 @@ if key == "提交百度账号" then
 local po = "https://api.kinh.cc/KinhDown/Cookie/Add.php"
 local pos = {}
 local bduss = pd.input('请输入BDUSS')
+if bduss == "" then
+pd.messagebox('没有键入内容','失败')
+else
 table.insert(pos, "Cookie: BDUSS="..bduss)
 local t = json.decode(request(po,pos))
+if t == nil then
+pd.messagebox('网络错误','失败')
+end
 local ss = t.data
 if ss == "此账号不是SVIP" then
 pd.messagebox('暂时只允许SVIP账号','失败')
 end
-return ACT_MESSAGE,ss
+pd.messagebox(ss,'成功')
+end
 end
 if key == "bduss" then
 local kkkks = pd.input("请输入BDUSS")
