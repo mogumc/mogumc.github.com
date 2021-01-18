@@ -21,13 +21,43 @@ function request(url,header)
 	return r
 end
 
+function post(url,header,data)
+	local r = ""
+	local c = curl.easy{
+        url = url,
+        post = 1,
+        postfields = data,
+        httpheader = header,
+        timeout = 15,
+        ssl_verifyhost = 0,
+        ssl_verifypeer = 0,
+        proxy = pd.getProxy(),
+        writefunction = function(buffer)
+            r = r .. buffer
+            return #buffer
+        end,
+	}
+	local _, e = c:perform()
+	c:close()
+	return r
+end
+
+function getrand(bduss)
+local url = "http://127.0.0.1:8989/api/getrand"
+local header = { "User-Agent: netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" }
+table.insert(header, "Cookie: BDUSS="..bduss.."SignText")
+local data = request(url,header)
+return data
+end
+
 script_info = {
 	["title"] = "PCS Downloader",
-	["version"] = "0.2.5",
-	["description"] = "version 0.2.5",
+	["version"] = "0.3.2",
+	["description"] = "version 0.3.2",
 }
 
 function onInitTask(task, user, file)
+
 if task:getType() == 1 then
 	if task:getName() == "node.dll" then
 	task:setUris("http://cdn01.mo23.me/dl/node.dll")
@@ -36,214 +66,238 @@ if task:getType() == 1 then
 end
 
 if task:getType() == TASK_TYPE_BAIDU or task:getType() == TASK_TYPE_SHARE_BAIDU then
-    local split = pd.getConfig("Download","maxConnections")
-    local ua = "netdisk;P2SP;2.2.60.26"
-    local sharetype = pd.getConfig("Download","sharetype")
-	local url1 = ""
-	if sharetype == nil then
-	sharetype = "1"
-	end
-	if sharetype == "1" or task:getType() == TASK_TYPE_BAIDU then
-    if user == nil then
-        task:setError(-1, "请登录账号")
-		return true
-	end
-	end
-	local appid = pd.getConfig("Download","appid")
-	if appid == "" then
-	appid = 250528
-	end
-	local header = {}
-	table.insert(header, "User-Agent: netdisk;P2SP;2.2.60.26")
-	local url = ""
-	local data = ""
-	local j = ""
-	if task:getType() == TASK_TYPE_BAIDU then
-	if appid == "778750&mgtype=svip" then
-	local urls = "https://c3.pcs.baidu.com/rest/2.0/pcs/file?method=download&origin=dlna&svip=1&vip=2&rand=0&devuid=0&clienttype=8&type=nolimit&path="..pd.urlEncode(file.path).."&app_id="..appid
-	task:setUris(urls)
-    task:setOptions("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36 netdisk P2SP")
-    task:setOptions("header", "Cookie: "..user:getCookie())
-	task:setOptions("piece-length", "1M")
-	task:setOptions("min-split-size", "256K")
-    task:setOptions("allow-piece-length-change", "true")
-	task:setIcon("icon/acceleration1.png", "下载中")
-    return true
-	end
-	url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&origin=dlna&svip=1&vip=2&ver=4.0&clienttype=8&channel=mg&type=nolimit&path="..pd.urlEncode(file.path).."&app_id="..appid
-    table.insert(header, "Cookie: "..user:getCookie())
-	data = request(url,header)
-    j = json.decode(data)
-	if j == nil then
-	task:setError(-1, "请求失败")
-        return true
-    end
-	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
-	end
-	if task:getType() == TASK_TYPE_SHARE_BAIDU then
-	local usud = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid")
-	if sharetype == "1" then
-    url = "https://bj.baidupcs.com/rest/2.0/pcs/file?method=locatedownload&rt=sh"..usud.."&iv=2&ssl=1&tsl=80&csl=80&app_id="..appid.."&vip=2&check_blue=1&es=1&esl=1&ver=4.0&dtype=1&err_ver=1.0&ehps=0&clienttype=8&channel=00000000000000000000000000000000&version=7.0.1.1&channel=0&version_app=7.0.1.1&origin=dlna&channel=chunlei&type=nolimit&sh=1"
-	table.insert(header, "Cookie: "..user:getCookie())
-	data = request(url,header)
-    j = json.decode(data)
-	if j == nil then
-	task:setError(-1, "请求失败")
-        return true
-    end
-	url1 = string.gsub(j.urls[1].url.."&vip=2&type=nolimit&sh=1","250528","778750")
-	end
-	if sharetype == "2" then
-	local dlinklink = file.dlink
-	url = "http://127.0.0.1:8989/api/yjx?dlink="..dlinklink
-	data = request(url,header)
-    j = json.decode(data)
-	if j == nil then
-	task:setError(-1, "请求失败")
-        return true
-    end
-	if j.error == "0" then
-	url1 = j.link
-	else
-	pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n提交账号请在搜索中输入：提交百度账号 提交账号\n为了大家正常下载 请勿更改内置固定线程!\n错误','下载通知')
-	task:setError(-1,"云解析错误,"..j.error)
-	return true
-	end
-	local dates = os.date("%Y%m%d",os.time())
-	if dates ~= pd.getConfig("Download","dates") then
-    pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n提交账号请在搜索中输入：提交百度账号 提交账号\n为了大家正常下载 请勿更改内置固定线程!\n本通知一天仅弹出一次','下载通知')
-    pd.setConfig("Download","dates",dates)
-	end
-	ua = j.ua
-	split = "16"
-	end
-	if sharetype == "zdy" then
-    local BDUSS = pd.getConfig("Download","BDUSS")
-	if BDUSS == "" then
-	BDUSS = pd.input("请输入BDUSS")
-	pd.setConfig("Download","BDUSS",BDUSS)
-	end
-	local appid = pd.getConfig("Download","appid")
-	if appid == "" then
-	appid = "250528"
-	end
-		local accelerate_url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload"
-		local url = "http://127.0.0.1:8989/api/getrand"
-		local header = { "User-Agent: netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" }
-		table.insert(header, "Cookie: BDUSS="..BDUSS.."SignText")
-		local data = ""
-		local c = curl.easy{
-		url = url,
-		followlocation = 1,
-		httpheader = header,
-		timeout = 15,
-		proxy = pd.getProxy(),
-		writefunction = function(buffer)
-			data = data .. buffer
-			return #buffer
-		end,
-		}
-	local _, e = c:perform()
-    c:close()
-    if e then
-        task:setError(-1,"链接至本地服务器失败,检查8989端口")
-		return true
-    end
-	local postdata = "app_id="..appid.."&ver=4" .. string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid") ..data
-	url=accelerate_url.."?"..postdata
-	local header = {}
-	if string.find(appid, "778750") ~= nil then
-	table.insert(header, "User-Agent: netdisk" )
-	else
-	table.insert(header, "User-Agent: netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" )
-	end
-	table.insert(header, "Cookie: BDUSS="..BDUSS)
-    local data = ""
-	local c = curl.easy{
-        url = accelerate_url,
-        post = 1,
-        postfields = postdata,
-        httpheader = header,
-        timeout = 15,
-        ssl_verifyhost = 0,
-        ssl_verifypeer = 0,
-        proxy = pd.getProxy(),
-        writefunction = function(buffer)
-            data = data .. buffer
-            return #buffer
-        end,
-	}
-	local _, e = c:perform()
-	c:close()
-	if e then
-        task:setError(-1,"请求远程服务器失败")
-		return true
-	end
-	if data == nil then
-	task:setError(-1,"链接请求失败,可能已经黑号")
-	return true
-	end
-	local j = json.decode(data)
-	if j == nil then
-		task:setError(-1,"链接请求失败,可能已经黑号")
-		return true
-	end
-	local downloadURL = {}
-	local s = ""
-    for i, w in ipairs(j.urls) do
-	s = w.url
-	table.insert(downloadURL,s)
-    end
-	    local a = "16"
-		local ck = j.urls[1].url
-	    if string.find(ck, "qdall") ~= nil then
-		a = "128"
-		end
-		task:setUris(downloadURL)
-		if string.find(appid, "778750") ~= nil then
-		task:setOptions("user-agent", "netdisk")
-	    else
-		task:setOptions("user-agent", "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2")
-		end
-		task:setOptions("header", "Range:bytes=0-0")
-		if file.size >=8192 then 
-		task:setOptions("header", "Range:bytes=4096-8191")
-		end
-		task:setIcon("icon/share.png", "下载中")
-		task:setOptions("split", a)
-		task:setOptions("piece-length", "1M")
-		task:setOptions("allow-piece-length-change", "true")
-		task:setOptions("enable-http-pipelining", "true")
-		return true
+local split = pd.getConfig("Download","maxConnections") 
+local ua = "netdisk;P2SP;2.2.60.26" 
+local aua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" 
+local nua = "netdisk" 
+local sharetype = pd.getConfig("Download","sharetype") 
+local downtype = pd.getConfig("Download","downtype") 
+local appid = pd.getConfig("Download","appid")
+if appid == nil then
+appid = "250528"
 end
-	end
-	task:setUris(url1)
-	task:setOptions("user-agent", ua)
-	task:setOptions("header", "Range:bytes=0-0")
-	task:setOptions("piece-length", "1M")
-	task:setOptions("min-split-size", "216K")
-    task:setOptions("allow-piece-length-change", "true")
-	task:setOptions("enable-http-pipelining", "false")
-	task:setIcon("icon/acceleration2.png", "正在下载中")
-	task:setOptions("split", split)
-	return true
+local mg = pd.getConfig("Baidu","accelerateURL") 
+if downtype == nil then
+downtype = "1" 
 end
-	task:setOptions("header", "Range:bytes=0-0")
-	task:setOptions("piece-length", "1M")
-	task:setOptions("min-split-size", "216K")
-    task:setOptions("allow-piece-length-change", "true")
-	task:setOptions("enable-http-pipelining", "false")
-	task:setIcon("icon/acceleration2.png", "正在下载中")
+local url = "" 
+if sharetype == nil then
+sharetype = "1" 
+end
+local downurl = "" 
+local header = {} 
+local BDUSS = pd.getConfig("Download","BDUSS") 
+local uBDUSS = user:getBDUSS() 
+local cookie = user:getCookie()
+
+if task:getType() == TASK_TYPE_BAIDU then
+if downtype == "1" then
+url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload"
+local rd = getrand(uBDUSS)
+local pd = "app_id="..appid.."&ver=4.0&vip=2&type=nolitm&path="..pd.urlEncode(file.path)..rd
+table.insert(header, "User-Agent: "..aua)
+table.insert(header, "Cookie: BDUSS="..uBDUSS)
+local data = post(url,header,pd)
+local c = json.decode(data)
+downurl = c.urls[1].url
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2"
+end
+
+if downtype == "2" then
+table.insert(header, "User-Agent: "..ua)
+url = "https://admir.xyz/blog/ad/raohei.php?path="..pd.urlEncode(file.path).."&devuid="..pd.md5(user:getBDUSS()).."&cookie=BDUSS="..user:getBDUSS()
+table.insert(header, "Cookie: BDUSS="..uBDUSS)
+local data = request(url,header)
+local a = json.decode(data)
+downurl = "https://"..a.server[1]..a.path
+ua = "netdisk;P2SP;2.2.60.26" 
+end
+
+if downtype == "3" then
+url = "http://127.0.0.1:8989/yjx1?path="..pd.urlEncode(file.path)
+table.insert(header, "User-Agent: "..aua)
+table.insert(header, "Cookie: BDUSS="..uBDUSS.."SignText")
+local data = request(url,header)
+local j = json.decode(data)
+local a = j.server[1]
+local b = j.path
+downurl = "https://"..a..b
+if string.find(downurl,"qdall") ~= nil then
+downurl = j.path1
+end
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2"
+end
+if downtype == "4" then
+url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload&app_id="..appid.."&ver=4.0&vip=2&type=nolitm&path="..pd.urlEncode(file.path)
+table.insert(header, "User-Agent: netdisk")
+table.insert(header, "Cookie: BDUSS="..uBDUSS)
+local data = request(url,header)
+local c = json.decode(data)
+downurl = c.urls[1].url
+ua = "netdisk" 
+end
+
+if downtype == "5" then
+local abab = file.id
+local ababab = pd.urlEncode(file.name)
+local abababab = pd.urlEncode(file.path)
+url = "https://service-jbhaus99-1252730052.sh.apigw.tencentcs.com/release/ClounDownload?fid="..abab.."&fname="..ababab.."&fpath="..abababab
+table.insert(header, "User-Agent: Pandownload/2021.01.16")
+table.insert(header, "Cookie: BDUSS="..uBDUSS)
+local data = request(url,header)
+local c = json.decode(data)
+downurl = c.urls[1].url
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" 
+end
+
+end
+
+if task:getType() == TASK_TYPE_SHARE_BAIDU then
+local filelink = string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid") 
+
+if sharetype == "1" then
+url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload"
+local rd = getrand(uBDUSS)
+local pd = "app_id=250528&ver=4.0&vip=2&type=nolitm"..filelink..rd
+table.insert(header, "User-Agent: "..aua)
+table.insert(header, "Cookie: BDUSS="..uBDUSS)
+local data = post(url,header,pd)
+local c = json.decode(data)
+downurl = c.urls[1].url
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2"
+end
+
+if sharetype == "2" then
+local dates = os.date("%Y%m%d",os.time())
+if dates ~= pd.getConfig("Download","dates") then
+pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n加速key将在TG频道@pandowns更新\n提交账号请在搜索中输入：提交百度账号 提交账号\n为了大家正常下载 请勿更改内置固定线程!\n本通知一天仅弹出一次','下载通知')
+pd.setConfig("Download","dates",dates)
+end
+local fid = file.dlink
+url = "http://api.mogumc.cn/v2/file?data="..fid.."&mg="..mg
+pd.logInfo(url)
+table.insert(header, "User-Agent: "..ua)
+local data = request(url,header)
+local c = json.decode(data)
+local code = c.code
+if code == "999" then
+mg = pd.input("请输入加速key")
+pd.setConfig("Baidu","accelerateURL",mg)
+task:setError(-999,"输入key后请重新下载")
+return false
+end
+if code ~= "0" then
+local msg = c.msg
+task:setError(-1,msg)
+return false
+else
+downurl = c.url
+split = c.split
+ua = c.ua
+end
+end
+
+if sharetype == "3" then
+url = "https://service-jbhaus99-1252730052.sh.apigw.tencentcs.com/release/ClounDownload?data="..pd.urlEncode(string.gsub(string.gsub(string.gsub(file.dlink, "https://d.pcs.baidu.com/file/", "&path="), "?fid", "&fid"),"&path=","")),
+table.insert(header, "User-Agent: Pandownload/2021.01.16")
+pd.logInfo(url)
+local m = json.decode(request(url,header))
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2"
+downurl = m.urls[1].url
+end
+
+if sharetype == "4" then
+local dates = os.date("%Y%m%d",os.time())
+if dates ~= pd.getConfig("Download","dates") then
+pd.messagebox('为了保证稳定下载 建议提供个人闲置账户 这边将会提供特殊算法保证账户正常使用!多谢大家的支持!\n加速key将在TG频道@pandowns更新\n提交账号请在搜索中输入：提交百度账号 提交账号\n为了大家正常下载 请勿更改内置固定线程!\n本通知一天仅弹出一次','下载通知')
+pd.setConfig("Download","dates",dates)
+end
+local fid = pd.urlEncode(file.dlink)
+url = "http://api.mogumc.cn/v4/file?data="..fid.."&mg="..mg
+pd.logInfo(url)
+table.insert(header, "User-Agent: "..ua)
+local data = request(url,header)
+local c = json.decode(data)
+local code = c.code
+if code == "999" then
+mg = pd.input("请输入加速key")
+pd.setConfig("Baidu","accelerateURL",mg)
+task:setError(-999,"输入key后请重新下载")
+return false
+end
+if code ~= "0" then
+local msg = c.msg
+task:setError(-1,msg)
+return false
+else
+downurl = c.url
+split = c.split
+ua = c.ua
+end
+end
+
+if sharetype == "zdy" then
+url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload"
+if BDUSS == "" then
+BDUSS = pd.input("请输入BDUSS")
+pd.setConfig("Download","BDUSS",BDUSS)
+end
+local header = { "User-Agent: netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2" }
+table.insert(header, "Cookie: BDUSS="..BDUSS)
+local rand = getrand(BDUSS)
+local pd = "&appid=250528&ver=4"..filelink..rand
+local data = post(url,header,pd)
+local a = json.decode(data)
+downurl = a.urls[1].url
+ua = "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android;QTP/1.0.32.2"
+end
+
+if sharetype == "zdsy" then
+url = "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locatedownload"
+if BDUSS == "" then
+BDUSS = pd.input("请输入BDUSS")
+pd.setConfig("Download","BDUSS",BDUSS)
+end
+local header = { "User-Agent: netdisk;P2SP;2.2.60.26" }
+table.insert(header, "Cookie: BDUSS="..BDUSS)
+local pd = "&appid=250528&ver=4"..filelink
+local data = post(url,header,pd)
+local a = json.decode(data)
+downurl = a.urls[1].url
+ua = "netdisk;P2SP;2.2.60.26"
+end
+end
+if downurl == nil then
+task:setError(-6,"接口异常")
+return true
+end
+if string.find(downurl, "issuecdn") ~= nil then 
+task:setError(-9,"文件已被百度禁止下载")
+return true
+end
+task:setUris(downurl)
+pd.logInfo(downurl)
+task:setOptions("piece-length", "1M")
+task:setOptions("min-split-size", "512K")
+task:setOptions("user-agent", ua)
+task:setOptions("allow-piece-length-change", "true")
+task:setOptions("split", split)
+task:setIcon("icon/acceleration1.png", "下载中")
+return true	
+end
 end
 
 function onSearch(key, page)
-if key ~= "set" and key ~= "appid" and key ~= "help" and key ~= "bduss" and key ~= "BDUSS" and key ~= "提交百度账号" then
+if key ~= "set" and key ~= "appid" and key ~= "help" and key ~= "bduss" and key ~= "BDUSS" and key ~= "提交百度账号" and key ~= "sets"then
 local appid = pd.input("请输入神秘代码 默认为250528")
 pd.setConfig("Download","appid",appid)
 return ACT_MESSAGE, "设置成功!当前APPID为"..appid
 end
 if key == "set" then
 return setConfig()
+end
+if key == "sets" then
+return setConfigs()
 end
 if key == "appid" then
 return setappid()
@@ -257,7 +311,7 @@ pd.setConfig("Download","BDUSS",kkkk)
 return ACT_MESSAGE, "设置成功!当前BDUSS为\n"..kkkk
 end
 if key == "提交百度账号" then
-local po = "https://api.kinh.cc/KinhDown/Cookie/Add.php"
+local po = "https://api.kinh.cc/KinhDown/BaiDu/Cookie/Add.php"
 local pos = {}
 local bduss = pd.input('请输入BDUSS')
 if bduss == "" then
@@ -297,13 +351,28 @@ end
 function setConfig()
 	local config = {}
 	table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
-	table.insert(config, {["title"] = "为了让大家拥有高速下载 请大家踊跃提交账户！", ["enabled"] = "false"})
-    table.insert(config, {["title"] = "输入 提交百度账号 提交账号", ["enabled"] = "false"})
 	local sharetype = pd.getConfig("Download","sharetype")
 	table.insert(config, {["title"] = "分享下载设置", ["enabled"] = "false"})
 	table.insert(config, createConfigItem("PCS接口", "sharetype", "1", sharetype == "1"))
 	table.insert(config, createConfigItem("云解析接口", "sharetype", "2",  sharetype == "2"))
+	table.insert(config, createConfigItem("云解析Plus", "sharetype", "3",  sharetype == "3"))
+	table.insert(config, createConfigItem("云解析MG", "sharetype", "4",  sharetype == "4"))
 	table.insert(config, createConfigItem("自定义接口", "sharetype", "zdy",  sharetype == "zdy"))
+	table.insert(config, createConfigItem("不带算法的自定义接口", "sharetype", "zdsy",  sharetype == "zdsy"))
+	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
+	return config
+end
+
+function setConfigs()
+local config = {}
+	table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
+	local downtype = pd.getConfig("Download","downtype")
+	table.insert(config, {["title"] = "直接下载设置", ["enabled"] = "false"})
+	table.insert(config, createConfigItem("PCS算法接口", "downtype", "1", downtype == "1"))
+	table.insert(config, createConfigItem("绕黑", "downtype", "2",  downtype == "2"))
+	table.insert(config, createConfigItem("云解析", "downtype", "3",  downtype == "3"))
+	table.insert(config, createConfigItem("PCS接口", "downtype", "4", downtype == "4"))
+	table.insert(config, createConfigItem("云解析Plus", "downtype", "5",  downtype == "5"))
 	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
@@ -311,29 +380,26 @@ end
 function setappid()
 	local config = {}
 	table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
-	table.insert(config, {["title"] = "为了让大家拥有高速下载 请大家踊跃提交账户！", ["enabled"] = "false"})
-    table.insert(config, {["title"] = "输入 提交百度账号 提交账号", ["enabled"] = "false"})
 	local appid = pd.getConfig("Download","appid")
 	table.insert(config, {["title"] = "APPID", ["enabled"] = "false"})
 	table.insert(config, createConfigItem("百度官方", "appid", "250528", appid == "250528"))
 	table.insert(config, createConfigItem("百度TV", "appid", "778750",  appid == "778750"))
-	table.insert(config, createConfigItem("受限账户(如果下载403请选择这个)", "appid", "778750&mgtype=svip", appid == "778750&mgtype=svip"))
-	table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
+    table.insert(config, {["title"] = "输入help查看更多帮助", ["enabled"] = "false"})
 	return config
 end
 
 function help()
 local config = {}
 table.insert(config, {["title"] = "PanDownload 无言修改版 TG频道:@fixpds TG群组:@fixpd", ["enabled"] = "false"})
-table.insert(config, {["title"] = "为了让大家拥有高速下载 请大家踊跃提交账户！", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入 提交百度账号 提交账号", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入appid即可选择预设appid", ["enabled"] = "false"})
-table.insert(config, {["title"] = "输入set即可进行设置", ["enabled"] = "false"})
+table.insert(config, {["title"] = "输入set即可进行分享下载设置", ["enabled"] = "false"})
+table.insert(config, {["title"] = "输入sets即可进行直接下载设置", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入help即可呼出帮助文档", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入setkey即可设置云账号key", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入bduss即可自定义账号", ["enabled"] = "false"})
 table.insert(config, {["title"] = "输入其他内容即可自定义appid", ["enabled"] = "false"})
-table.insert(config, {["title"] = "帮助文档 ver 1.0 修订 2020-11-13", ["enabled"] = "false"})
+table.insert(config, {["title"] = "帮助文档 ver 2.0 修订 2021-01-02", ["enabled"] = "false"})
 return config
 end
 
